@@ -50,34 +50,31 @@ class BackendAPI:
         # Store (status already set by backend daemon)
         conn_id = self.storage.insert_connection(conn)
 
-        # Emit event for UI
+        # Emit event for UI (compact serialization: exclude None values)
         self._emit_event("connection_ingested", {
             "id": conn_id,
-            "connection": conn.to_dict(),
+            "connection": conn.to_dict(include_none=False),
         })
 
     def get_recent_connections(self, limit: int = 100) -> list:
-        """Fetch recent connections (limited)."""
+        """Fetch recent connections (limited, compact serialization)."""
         conns = self.storage.get_connections(limit=limit)
-        return [c.to_dict() for c in conns]
+        return [c.to_dict(include_none=False) for c in conns]
 
     def get_all_connections(self) -> list:
-        """Fetch all connections from database (no limit)."""
+        """Fetch all connections from database (no limit, compact)."""
         conns = self.storage.get_all_connections()
-        return [c.to_dict() for c in conns]
+        return [c.to_dict(include_none=False) for c in conns]
 
     def get_connections_by_ip(self, dst_ip: str, limit: int = 50) -> list:
-        """Query connections by destination IP."""
+        """Query connections by destination IP (compact)."""
         conns = self.storage.get_connection_by_ip(dst_ip, limit=limit)
-        return [c.to_dict() for c in conns]
+        return [c.to_dict(include_none=False) for c in conns]
 
     def get_connections_by_exe(self, exe: str, limit: int = 50) -> list:
-        """Query connections by executable."""
+        """Query connections by executable (compact)."""
         conns = self.storage.get_connection_by_exe(exe, limit=limit)
-        return [c.to_dict() for c in conns]
-
-
-
+        return [c.to_dict(include_none=False) for c in conns]
 
     def get_rules(self) -> list:
         """Get all rules (returns empty list - rules not implemented)."""

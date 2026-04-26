@@ -641,7 +641,7 @@ class CyberObservabilityApp(QMainWindow):
                     "total_connections": len(conns),
                     "total_rules": len(rules),
                 },
-                "connections": [c if isinstance(c, dict) else c.to_dict() for c in conns],
+                "connections": [c for c in conns],
                 "rules": rules,
             }
 
@@ -669,7 +669,7 @@ class CyberObservabilityApp(QMainWindow):
                 return
 
             # Get first connection to determine columns
-            first = conns[0] if isinstance(conns[0], dict) else conns[0].to_dict()
+            first = conns[0]
             fieldnames = first.keys()
 
             with open(filepath, "w", newline="") as f:
@@ -677,7 +677,7 @@ class CyberObservabilityApp(QMainWindow):
                 writer.writeheader()
 
                 for conn in conns:
-                    row = conn if isinstance(conn, dict) else conn.to_dict()
+                    row = conn
                     writer.writerow(row)
 
             logger.info(f"✓ Exported to {filepath}")

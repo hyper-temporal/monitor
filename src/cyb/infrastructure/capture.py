@@ -1,7 +1,7 @@
 """
 Network packet capture via tcpdump.
 
-Responsibility: Parse tcpdump output into Connection objects.
+Responsibility: Parse tcpdump output into Packet objects.
 Works with standard macOS/Linux tcpdump.
 
 Single Responsibility: Only handles packet parsing.
@@ -12,10 +12,28 @@ import re
 import subprocess
 import shlex
 from datetime import datetime
-from typing import Generator, Optional, Dict, Any
+from typing import Generator, Optional, NamedTuple
 import logging
 
 logger = logging.getLogger(__name__)
+
+
+class Packet(NamedTuple):
+    """Raw network packet from tcpdump/libpcap."""
+    timestamp: str
+    src_ip: str
+    src_port: int
+    dst_ip: str
+    dst_port: int
+    protocol: str
+    pid: Optional[int] = None
+
+    def is_valid(self) -> bool:
+        """Check required fields are present."""
+        return all([
+            self.timestamp, self.src_ip, self.dst_ip,
+            self.dst_port, self.protocol
+        ])
 
 
 class PacketCapture:
@@ -26,8 +44,8 @@ class PacketCapture:
         self.config = config
         self.interface = config.get("capture", {}).get("interface")
         
-    def stream(self) -> Generator[Dict[str, Any], None, None]:
-        """Stream packets from tcpdump."""
+    def stream(self) -> Generator[Packet, None, None]:
+        """Stream packets from tcpdump as typed Packet objects."""
         cmd = self._build_command()
         logger.info(f"Starting tcpdump: {cmd}")
         
@@ -72,8 +90,8 @@ class PacketCapture:
         
         return cmd
     
-    def _parse_line(self, line: str) -> Optional[Dict[str, Any]]:
-        """Parse a single tcpdump line into connection data.
+    def _parse_line(self, line: str) -> Optional[Packet]:
+        """Parse a single tcpdump line into typed Packet.
         
         Example tcpdump output:
         13:45:22.123456 IP 192.168.1.100.54321 > 8.8.8.8.53: UDP, length 53
@@ -97,14 +115,16 @@ class PacketCapture:
             # Determine protocol
             protocol = "UDP" if "UDP" in line else "TCP"
             
-            return {
-                "src_ip": src_ip,
-                "src_port": int(src_port),
-                "dst_ip": dst_ip,
-                "dst_port": int(dst_port),
-                "protocol": protocol,
-                "timestamp": datetime.utcnow().isoformat(),
-            }
+            # Return typed Packet (NamedTuple - more efficient than dataclass)
+            return Packet(
+                timestamp=datetime.utcnow().isoformat(),
+                src_ip=src_ip,
+                src_port=int(src_port),
+                dst_ip=dst_ip,
+                dst_port=int(dst_port),
+                protocol=protocol,
+                pid=None,  # Will be enriched later
+            )
         except (ValueError, AttributeError) as e:
             logger.debug(f"Parse error on line '{line}': {e}")
             return None

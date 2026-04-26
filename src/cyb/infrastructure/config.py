@@ -8,7 +8,7 @@ Single Responsibility: Only config loading.
 import os
 import yaml
 from pathlib import Path
-from typing import Dict, Any, Optional
+from typing import Any, Optional
 import logging
 
 logger = logging.getLogger(__name__)
@@ -24,8 +24,8 @@ class Config:
         "storage": {
             "db_path": "~/.cyb/cyb.db",
         },
-        "rules": {
-            "enabled": True,
+        "logging": {
+            "level": "INFO",
         },
     }
     
@@ -64,7 +64,3 @@ class Config:
     def get(self, key: str, default: Any = None) -> Any:
         """Get config value."""
         return self.config.get(key, default)
-    
-    def to_dict(self) -> Dict[str, Any]:
-        """Export config as dict."""
-        return self.config.copy()

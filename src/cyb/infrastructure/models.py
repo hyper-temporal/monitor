@@ -5,7 +5,7 @@ These are DTOs (data transfer objects) - no business logic, just data shapes.
 Used across layers for passing data around.
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, asdict
 from typing import Optional
 
 
@@ -27,16 +27,19 @@ class Connection:
     user: Optional[str] = None
     status: str = "pending"  # pending, allowed, blocked
 
-    def to_dict(self) -> dict:
-        """Convert to dictionary (for serialization)."""
-        return {
-            "timestamp": self.timestamp,
-            "src_ip": self.src_ip,
-            "dst_ip": self.dst_ip,
-            "dst_port": self.dst_port,
-            "protocol": self.protocol,
-            "pid": self.pid,
-            "exe": self.exe,
-            "user": self.user,
-            "status": self.status,
-        }
+    def to_dict(self, include_none: bool = False) -> dict:
+        """
+        Convert to dictionary for serialization.
+        
+        Args:
+            include_none: If False (default), exclude None values to reduce payload
+        
+        Uses dataclasses.asdict() for efficient conversion.
+        """
+        data = asdict(self)
+        
+        # Remove None values to reduce JSON payload size
+        if not include_none:
+            data = {k: v for k, v in data.items() if v is not None}
+        
+        return data

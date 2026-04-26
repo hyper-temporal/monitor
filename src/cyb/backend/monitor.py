@@ -1,16 +1,15 @@
 """
 Real-time network monitor.
 
-Orchestrates packet capture, process enrichment, rule evaluation,
-and live display of connections.
+Orchestrates packet capture, process enrichment, and storage.
 
 Follows Single Responsibility: only coordinates other components.
 """
 
-from typing import Optional, List, Dict, Any
+from typing import Optional
 import logging
 
-from cyb.infrastructure import Config, PacketCapture, ProcessEnricher, ConnectionStorage
+from cyb.infrastructure import Config, PacketCapture, ProcessEnricher, ConnectionStorage, Connection, Packet
 
 logger = logging.getLogger(__name__)
 
@@ -36,13 +35,14 @@ class Monitor:
         
         try:
             for packet in self.capture.stream():
-                # Process packet
+                # Packet is already typed (PacketCapture yields Packet objects)
+                if not packet.is_valid():
+                    continue
+                
+                # Enrich packet with process info → Connection
                 connection = self._process_packet(packet)
                 if not connection:
                     continue
-                
-                # Default action
-                connection["action"] = "allow"
                 
                 # Store
                 self.storage.insert(connection)
@@ -56,34 +56,38 @@ class Monitor:
             logger.error(f"Monitor error: {e}", exc_info=True)
             raise
     
-    def _process_packet(self, packet: Dict[str, Any]) -> Optional[Dict[str, Any]]:
-        """Enrich packet with process information."""
-        # Extract network info
-        connection = {
-            "src_ip": packet.get("src_ip"),
-            "dst_ip": packet.get("dst_ip"),
-            "dst_port": packet.get("dst_port"),
-            "protocol": packet.get("protocol"),
-            "timestamp": packet.get("timestamp"),
-        }
+    def _process_packet(self, packet: Packet) -> Optional[Connection]:
+        """
+        Enrich typed Packet with process information.
         
-        # Enrich with process info
-        if packet.get("pid"):
-            proc_info = self.enricher.get_process_info(packet["pid"])
-            connection.update(proc_info)
+        Returns Connection object with network and process metadata.
+        """
+        # Enrich with process info (type-safe ProcessInfo)
+        proc_info = self.enricher.get_process_info(packet.pid) if packet.pid else None
         
-        return connection if connection.get("dst_ip") else None
+        # Build Connection object (type-safe, validated)
+        return Connection(
+            timestamp=packet.timestamp,
+            src_ip=packet.src_ip,
+            dst_ip=packet.dst_ip,
+            dst_port=packet.dst_port,
+            protocol=packet.protocol,
+            pid=packet.pid,
+            exe=proc_info.exe if proc_info else "unknown",
+            user=proc_info.user if proc_info else "unknown",
+            status="pending"
+        )
     
-    def _display_connection(self, conn: Dict[str, Any], 
+    def _display_connection(self, conn: Connection, 
                           filter_expr: Optional[str] = None) -> None:
         """Display connection to user."""
         if filter_expr:
-            exe = conn.get("exe", "")
-            ip = conn.get("dst_ip", "")
+            exe = conn.exe or ""
+            ip = conn.dst_ip or ""
             if filter_expr not in exe and filter_expr not in ip:
                 return
         
-        action_symbol = "→" if conn.get("action") == "allow" else "✗"
-        exe = conn.get("exe", "unknown").split("/")[-1]
-        print(f"{action_symbol} {exe:15} {conn.get('dst_ip'):15} "
-              f"{conn.get('dst_port'):5} {conn.get('protocol')}")
+        action_symbol = "→"  # No blocking rules yet
+        exe = conn.exe.split("/")[-1] if conn.exe else "unknown"
+        print(f"{action_symbol} {exe:15} {conn.dst_ip:15} "
+              f"{conn.dst_port:5} {conn.protocol}")
