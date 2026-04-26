@@ -1,0 +1,28 @@
+"""
+Repository interface for rules.
+
+Defines the contract for accessing rule data.
+"""
+
+from typing import List, Protocol
+from cyb.domain import Rule
+
+
+class RuleRepository(Protocol):
+    """Abstract interface for rule storage."""
+
+    def insert_rule(self, action: str, dst_ip: str = None, dst_port: int = None, exe: str = None, created: str = None) -> int:
+        """Insert a rule. Returns row id."""
+        ...
+
+    def get_rules(self) -> List[Rule]:
+        """Fetch all rules."""
+        ...
+
+    def delete_rule(self, rule_id: int) -> bool:
+        """Delete a rule."""
+        ...
+
+    def clear_rules(self) -> None:
+        """Delete all rules."""
+        ...
