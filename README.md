@@ -1,6 +1,6 @@
 # Cyber Observability Tool
 
-Real-time network monitoring for macOS. Capture packets, identify processes, create rules.
+Real-time network monitoring for macOS. Capture packets, identify processes.
 
 ## Quick Start
 
@@ -18,9 +18,7 @@ python frontend/frontend_app.py
 - 📍 **IP identification** - Know what services you're connecting to
 - 🔴 **Suspicious detection** - Automatically highlights unusual activity
 - 📊 **Analytics** - Group connections by IP, see activity patterns
-- 📋 **Rules** - Block or allow specific IPs/ports
 - 💾 **Export** - JSON, CSV, SQL dumps with one click
-- 🗑️ **Clear** - Wipe data while keeping rules
 
 ## Project Structure
 
@@ -31,7 +29,6 @@ python frontend/frontend_app.py
 ├── backend/                   # Core logic
 │   ├── capture.py             # tcpdump parser
 │   ├── storage.py             # SQLite database
-│   ├── rules.py               # Rule matching
 │   ├── process.py             # Process enrichment (lsof)
 │   ├── ip_intel.py            # IP identification
 │   ├── analytics.py           # Aggregation
@@ -39,7 +36,7 @@ python frontend/frontend_app.py
 │   ├── config.py              # Configuration
 │   └── logger.py              # Logging
 ├── frontend/                  # PyQt5 GUI
-│   └── main.py                # Display, search, rules, export
+│   └── main.py                # Display, search, export
 ├── tests/                     # Unit tests
 ├── tools/                     # Utilities and scripts
 ├── docs/                      # Detailed documentation

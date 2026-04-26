@@ -152,7 +152,6 @@ cyb/
 1. **Start with capture**: Parse tcpdump output, write tests
 2. **Add enrichment**: Map PIDs to executables
 3. **Add storage**: SQLite schema, simple queries
-4. **Add rules**: Match connections against rules
 5. **Build UI**: PyQt displays data, sends control signals
 6. **Iterate**: Test edge cases, refine rules
 
@@ -173,7 +172,7 @@ pytest>=7.0   # dev only
 ## Testing Strategy
 
 - **Unit tests**: Pure functions (rules, parsing, enrichment)
-- **Integration tests**: Capture + storage + rules together
+- **Integration tests**: Capture + storage together
 - **No UI tests** unless you have time
 - Use pytest, avoid mocking internals
 

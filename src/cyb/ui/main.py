@@ -8,6 +8,9 @@ import argparse
 import logging
 from datetime import datetime
 from pathlib import Path
+import csv
+import json
+from PyQt5.QtWidgets import QApplication
 
 # Setup logging
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
@@ -282,7 +285,6 @@ class AnalyticsTable(QTableWidget):
 
     def on_item_clicked(self, item):
         """Handle cell click—copy cell content to clipboard."""
-        from PyQt5.QtWidgets import QApplication
         text = item.text()
         if text:
             try:
@@ -294,7 +296,6 @@ class AnalyticsTable(QTableWidget):
 
     def on_row_clicked(self, row: int):
         """Handle row number click—copy entire row to clipboard."""
-        from PyQt5.QtWidgets import QApplication
         # Collect all cells in the row
         row_data = []
         for col in range(self.columnCount()):
@@ -632,7 +633,7 @@ class CyberObservabilityApp(QMainWindow):
 
     def on_export_json(self):
         """Export connections and rules to JSON with timestamp."""
-        import json
+
 
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         filename = f"cyb_export_{timestamp}.json"
@@ -663,7 +664,6 @@ class CyberObservabilityApp(QMainWindow):
 
     def on_export_csv(self):
         """Export connections to CSV with timestamp."""
-        import csv
 
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         filename = f"cyb_connections_{timestamp}.csv"
