@@ -5,57 +5,78 @@ Reads from shared SQLite database populated by the backend daemon.
 """
 
 import sys
+import argparse
+import logging
+from pathlib import Path
 
-# Handle both direct execution and module execution
-try:
-    from backend.api import BackendAPI
-    from backend.logger import get_logger
-    from frontend.main import CyberObservabilityApp
-except ImportError:
-    # Direct execution: add parent directory to path
-    import os
-    sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-    from backend.api import BackendAPI
-    from backend.logger import get_logger
-    from frontend.main import CyberObservabilityApp
+# Setup logging
+logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
+logger = logging.getLogger(__name__)
 
-logger = get_logger(__name__)
-
-# Try to import PyQt5
+# Check if PyQt5 is available
 try:
     from PyQt5.QtWidgets import QApplication
     PYQT_AVAILABLE = True
 except ImportError:
     PYQT_AVAILABLE = False
 
+from cyb.backend import BackendAPI
+from cyb.ui.main import CyberObservabilityApp
+
 
 def main():
     """Frontend application: Display network connections from database."""
+    parser = argparse.ArgumentParser(
+        description="Cyber Observability — Real-time Network Monitor",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  python -m cyb.ui.frontend_app -d /path/to/cyb.db
+  python -m cyb.ui.frontend_app --database ./cyb.db
+        """,
+    )
+    parser.add_argument(
+        "-d", "--database",
+        type=str,
+        required=False,
+        help="Path to SQLite database (default: cyb.db in current directory)",
+    )
+
+    args = parser.parse_args()
+
     if not PYQT_AVAILABLE:
         logger.error("PyQt5 not installed")
         logger.error("Install with: pip install PyQt5")
         sys.exit(1)
 
+    # Resolve database path
+    db_path = args.database if args.database else "cyb.db"
+
+    # Convert to absolute path if relative
+    if not Path(db_path).is_absolute():
+        db_path = str(Path.cwd() / db_path)
+
+    logger.info(f"Using database: {db_path}")
+
     # Initialize backend (reads from shared database)
-    backend = BackendAPI()
-    logger.info("Frontend initialized - connecting to shared database")
-    logger.info("")
+    try:
+        backend = BackendAPI(db_path=db_path, read_only=True)
+        logger.info("Backend initialized")
+    except FileNotFoundError as e:
+        logger.error(f"Database not found: {db_path}")
+        sys.exit(1)
+    except Exception as e:
+        logger.error(f"Failed to initialize backend: {e}")
+        sys.exit(1)
 
     # Create and show PyQt5 GUI
     logger.info("🎨 Launching frontend GUI (runs as normal user)...")
-    logger.info("")
 
     app = QApplication(sys.argv)
     window = CyberObservabilityApp(backend)
     window.show()
 
-    logger.info("GUI started. Waiting for connections from backend daemon...")
-    logger.info("")
-    logger.info("To capture packets:")
-    logger.info("  1. Open another terminal")
-    logger.info("  2. Run: sudo python backend_daemon.py --interface en0")
-    logger.info("  3. Watch connections appear here in real-time")
-    logger.info("")
+    logger.info("GUI started. Waiting for connections...")
 
     sys.exit(app.exec_())
 

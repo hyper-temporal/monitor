@@ -27,9 +27,8 @@ except ImportError:
     PYQT_AVAILABLE = False
 
 from cyb.backend import BackendAPI
-from cyb.domain import Connection
+from cyb.domain import Connection, ConnectionAnalytics
 from cyb.domain import identify_ip, identify_port, is_common_traffic
-from cyb.core.analytics import ConnectionAnalytics
 
 
 class ConnectionTable(QTableWidget):
@@ -254,6 +253,7 @@ class AnalyticsTable(QTableWidget):
         self.analytics_data = {}
         self.sort_column = 1  # Default sort by Count
         self.sort_ascending = False  # Descending (most active first)
+        self._last_update_count = 0  # Track last update to avoid redundant conversions
         self.setup_table()
 
     def setup_table(self):
@@ -352,13 +352,32 @@ class AnalyticsTable(QTableWidget):
             self._add_row(ip, data)
 
     def update_analytics(self, connections: list):
-        """Update analytics from connections list."""
+        """Update analytics from connections list (dicts from backend).
+        
+        Only updates if the number of connections has changed (avoids redundant conversions).
+        Converts dicts to Connection objects before passing to domain service.
+        """
         if not connections:
             self.setRowCount(0)
+            self._last_update_count = 0
             return
 
-        # Group by IP
-        grouped = ConnectionAnalytics.group_by_ip(connections)
+        # Skip update if no new connections (avoid expensive conversion on every timer tick)
+        if len(connections) == self._last_update_count:
+            return
+        
+        self._last_update_count = len(connections)
+
+        # Convert dicts to Connection objects before calling domain service
+        # This happens only when the data set actually changes
+        try:
+            connection_objects = [Connection(**conn) for conn in connections]
+        except Exception as e:
+            logger.error(f"Failed to convert connections: {e}")
+            return
+
+        # Group by IP using domain service (now working with typed objects)
+        grouped = ConnectionAnalytics.group_by_ip(connection_objects)
         self.analytics_data = grouped
 
         # Re-render with current sort order
@@ -539,19 +558,6 @@ class CyberObservabilityApp(QMainWindow):
         """Handle search/filter input."""
         self.table.filter_connections(text)
 
-        rule_id = self.backend.add_rule(
-            action=action,
-            dst_ip=dst_ip,
-            dst_port=dst_port,
-            exe=None,
-            created=datetime.now().isoformat(),
-        )
-        logger.info(f"Rule created: {action} {dst_ip}:{dst_port} (id={rule_id})")
-
-        # Clear inputs
-        self.ip_input.clear()
-        self.port_input.clear()
-
     def update_stats_and_connections(self):
         """Update statistics and poll for new connections (for separate process mode)."""
         # Raw connections table: show latest 1000 packets only (for display performance)
@@ -619,7 +625,7 @@ class CyberObservabilityApp(QMainWindow):
                 self.table.add_connection(conn)
             self.last_connection_count = current_count
 
-        # Refresh analytics with ALL data from backend (for accurate aggregation)
+        # Refresh analytics with ALL data from backend (only if data changed)
         self.analytics_table.update_analytics(all_conns)
 
     def on_export_json(self):
@@ -705,6 +711,7 @@ class CyberObservabilityApp(QMainWindow):
             self.table.refresh_table()
             self.analytics_table.setRowCount(0)
             self.analytics_table.analytics_data = {}
+            self.analytics_table._last_update_count = 0
             self.last_connection_count = 0
             self.stats_label.setText("Connections: 0 | Unique IPs: 0 | Rules: 0")
 
