@@ -1,13 +1,15 @@
 """
-SQLite implementation of repository interfaces.
-Responsibility: Database operations (all SQL code here).
-Matches the schema used by cyb.core.storage (the real backend).
+SQLite implementation of ConnectionRepository.
+
+Infrastructure-specific adapter: handles SQLite details.
+Implements the generic ConnectionRepository interface defined in domain/repository.
 """
 
 import sqlite3
-from typing import List, Optional
+from typing import List
 
-from cyb.infrastructure.models import Connection
+from cyb.domain import Connection
+from cyb.repository import ConnectionRepository
 
 
 class SQLiteRepository:
@@ -15,7 +17,7 @@ class SQLiteRepository:
 
     def __init__(self, db_path: str = ":memory:", read_only: bool = False):
         """Initialize repository with SQLite database.
-        
+
         Args:
             db_path: Path to SQLite database
             read_only: If True, open in read-only mode (for frontend use)
@@ -50,7 +52,7 @@ class SQLiteRepository:
                 ORDER BY timestamp DESC
                 LIMIT ?
             """, (limit,))
-            
+
             rows = cursor.fetchall()
             return [self._row_to_connection(row) for row in rows]
         except sqlite3.OperationalError as e:
@@ -69,7 +71,7 @@ class SQLiteRepository:
                 SELECT * FROM connections
                 ORDER BY timestamp DESC
             """)
-            
+
             rows = cursor.fetchall()
             return [self._row_to_connection(row) for row in rows]
         except sqlite3.OperationalError as e:
@@ -90,7 +92,7 @@ class SQLiteRepository:
                 ORDER BY timestamp DESC
                 LIMIT ?
             """, (dst_ip, limit))
-            
+
             rows = cursor.fetchall()
             return [self._row_to_connection(row) for row in rows]
         except sqlite3.OperationalError as e:
@@ -111,7 +113,7 @@ class SQLiteRepository:
                 ORDER BY timestamp DESC
                 LIMIT ?
             """, (exe, limit))
-            
+
             rows = cursor.fetchall()
             return [self._row_to_connection(row) for row in rows]
         except sqlite3.OperationalError as e:
@@ -152,7 +154,7 @@ class SQLiteRepository:
     def clear_and_vacuum(self) -> None:
         """Delete all connections and reclaim space."""
         import sqlite3
-        
+
         # Always use direct connection, ignore read_only
         conn = sqlite3.connect(str(self.db_path), timeout=5.0)
         try:

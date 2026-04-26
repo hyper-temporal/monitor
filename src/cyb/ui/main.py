@@ -27,7 +27,7 @@ except ImportError:
     PYQT_AVAILABLE = False
 
 from cyb.backend import BackendAPI
-from cyb.infrastructure import Connection
+from cyb.domain import Connection
 from cyb.core.ip_intel import identify_ip, identify_port, is_common_traffic
 from cyb.core.analytics import ConnectionAnalytics
 

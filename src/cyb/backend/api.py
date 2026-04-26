@@ -5,8 +5,8 @@ Responsibility: Expose backend operations through queue-based interface.
 
 from typing import Any, Callable, Optional
 
-from cyb.infrastructure import Connection
-from cyb.repository import SQLiteRepository
+from cyb.domain import Connection
+from cyb.infrastructure import SQLiteRepository
 
 
 class BackendAPI:
@@ -85,7 +85,7 @@ class BackendAPI:
         
         Opens a separate writable connection, ignoring read_only mode.
         """
-        from cyb.repository import SQLiteRepository
+        from cyb.infrastructure import SQLiteRepository
         
         # Create temporary writable repository to clear data
         temp_storage = SQLiteRepository(db_path=self.storage.db_path, read_only=False)

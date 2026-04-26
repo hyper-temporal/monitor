@@ -12,7 +12,7 @@ import logging
 import sqlite3
 from uuid import uuid4
 
-from cyb.infrastructure.models import Connection
+from cyb.domain import Connection
 
 logger = logging.getLogger(__name__)
 
@@ -22,7 +22,7 @@ class ConnectionStorage:
     
     def __init__(self, config):
         """Initialize storage with repository."""
-        from cyb.repository import SQLiteRepository
+        from cyb.infrastructure.sqlite_repository import SQLiteRepository
         
         self.config = config
         self.db_path = Path(config.get("storage", {}).get("db_path", "~/.cyb/cyb.db")).expanduser()

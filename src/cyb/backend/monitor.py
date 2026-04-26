@@ -9,7 +9,8 @@ Follows Single Responsibility: only coordinates other components.
 from typing import Optional
 import logging
 
-from cyb.infrastructure import Config, PacketCapture, ProcessEnricher, ConnectionStorage, Connection, Packet
+from cyb.infrastructure import Config, PacketCapture, ProcessEnricher, ConnectionStorage
+from cyb.domain import Connection, Packet
 
 logger = logging.getLogger(__name__)
 

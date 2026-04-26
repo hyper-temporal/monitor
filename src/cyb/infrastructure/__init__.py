@@ -1,20 +1,24 @@
-"""Infrastructure layer: Technical implementations and data models."""
+"""Infrastructure layer: Technical implementations (no domain entities)."""
 
 from cyb.infrastructure.config import Config
 from cyb.infrastructure.logger import get_logger
-from cyb.infrastructure.storage import ConnectionStorage
-from cyb.infrastructure.capture import PacketCapture, Packet
+from cyb.infrastructure.connection_storage import ConnectionStorage
+from cyb.infrastructure.capture import PacketCapture
 from cyb.infrastructure.process import ProcessEnricher
-from cyb.infrastructure.models import Connection
-from cyb.domain import ProcessInfo
+from cyb.infrastructure.sqlite_repository import SQLiteRepository
+
+# Domain entities (re-exported for convenience)
+from cyb.domain import Connection, Packet, ProcessInfo
 
 __all__ = [
     "Config",
     "get_logger",
     "ConnectionStorage",
     "PacketCapture",
-    "Packet",
     "ProcessEnricher",
+    "SQLiteRepository",
+    # Domain entities
     "Connection",
+    "Packet",
     "ProcessInfo",
 ]

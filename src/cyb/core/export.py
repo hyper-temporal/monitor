@@ -19,7 +19,7 @@ class Exporter:
     
     def __init__(self, db_path: Optional[str] = None):
         """Initialize exporter with repository."""
-        from cyb.repository import SQLiteRepository
+        from cyb.infrastructure import SQLiteRepository
         from cyb.infrastructure import Config
         
         if db_path is None:

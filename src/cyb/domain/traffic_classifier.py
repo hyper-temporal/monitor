@@ -6,7 +6,7 @@ Works with typed Connection objects, not dicts.
 """
 
 from typing import Literal, List
-from cyb.infrastructure.models import Connection
+from cyb.domain.connection import Connection
 
 
 class TrafficClassifier:
@@ -41,16 +41,16 @@ class TrafficClassifier:
     def is_common_traffic(dst_ip: str, dst_port: int) -> bool:
         """
         Classify if traffic is normal or unusual.
-        
+
         Business rule:
           - Known services are normal
           - Well-known ports are normal
           - Everything else is potentially suspicious
-        
+
         Args:
             dst_ip: Destination IP address
             dst_port: Destination port
-        
+
         Returns True if normal, False if suspicious.
         """
         # Check if IP belongs to known service
@@ -69,11 +69,11 @@ class TrafficClassifier:
     def classify(dst_ip: str, dst_port: int) -> Literal["normal", "suspicious"]:
         """
         Classify a single connection.
-        
+
         Args:
             dst_ip: Destination IP address
             dst_port: Destination port
-        
+
         Returns "normal" or "suspicious" based on business rules.
         """
         return "normal" if TrafficClassifier.is_common_traffic(dst_ip, dst_port) else "suspicious"
@@ -82,10 +82,10 @@ class TrafficClassifier:
     def classify_connection(conn: Connection) -> Literal["normal", "suspicious"]:
         """
         Classify a typed Connection object.
-        
+
         Args:
             conn: Typed Connection object
-        
+
         Returns "normal" or "suspicious".
         """
         return TrafficClassifier.classify(conn.dst_ip, conn.dst_port)
@@ -94,10 +94,10 @@ class TrafficClassifier:
     def classify_connections(connections: List[Connection]) -> dict:
         """
         Classify multiple connections.
-        
+
         Args:
             connections: List of typed Connection objects
-        
+
         Returns dict with counts of normal and suspicious traffic.
         """
         classifications = {
@@ -105,12 +105,12 @@ class TrafficClassifier:
             "suspicious": 0,
             "suspicious_ips": set(),
         }
-        
+
         for conn in connections:
             classification = TrafficClassifier.classify_connection(conn)
             classifications[classification] += 1
             if classification == "suspicious":
                 classifications["suspicious_ips"].add(conn.dst_ip)
-        
+
         classifications["suspicious_ips"] = sorted(list(classifications["suspicious_ips"]))
         return classifications

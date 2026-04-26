@@ -1,8 +1,8 @@
 """
-Data models: Shared data structures (not domain entities).
+Domain model: Network connection.
 
-These are DTOs (data transfer objects) - no business logic, just data shapes.
-Used across layers for passing data around.
+Represents a network connection event with full enrichment.
+Core domain entity - no infrastructure dependencies.
 """
 
 from dataclasses import dataclass, asdict
@@ -13,9 +13,11 @@ from typing import Optional
 class Connection:
     """
     A network connection event.
-    
-    Data structure: represents a single observed connection.
-    No business logic, just a container for connection data.
+
+    Domain entity: represents a single observed network connection
+    with process enrichment and metadata.
+
+    Status lifecycle: pending → allowed | blocked
     """
     timestamp: str
     src_ip: str
@@ -30,16 +32,16 @@ class Connection:
     def to_dict(self, include_none: bool = False) -> dict:
         """
         Convert to dictionary for serialization.
-        
+
         Args:
             include_none: If False (default), exclude None values to reduce payload
-        
+
         Uses dataclasses.asdict() for efficient conversion.
         """
         data = asdict(self)
-        
+
         # Remove None values to reduce JSON payload size
         if not include_none:
             data = {k: v for k, v in data.items() if v is not None}
-        
+
         return data
