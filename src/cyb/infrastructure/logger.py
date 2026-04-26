@@ -7,7 +7,6 @@ Single Responsibility: Only logging setup.
 
 import logging
 import sys
-from pathlib import Path
 
 
 def get_logger(name: str) -> logging.Logger:
@@ -16,26 +15,22 @@ def get_logger(name: str) -> logging.Logger:
 
 
 def setup_logging(level: int = logging.INFO) -> None:
-    """Configure logging."""
-    log_dir = Path.home() / ".cyb" / "logs"
-    log_dir.mkdir(parents=True, exist_ok=True)
+    """Configure logging for the entire application.
     
-    # Console handler
-    console_handler = logging.StreamHandler(sys.stderr)
-    console_handler.setLevel(level)
-    console_fmt = logging.Formatter("%(levelname)s: %(message)s")
-    console_handler.setFormatter(console_fmt)
-    
-    # File handler
-    file_handler = logging.FileHandler(log_dir / "cyb.log")
-    file_handler.setLevel(logging.DEBUG)
-    file_fmt = logging.Formatter(
-        "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-    )
-    file_handler.setFormatter(file_fmt)
-    
-    # Root logger
+    Args:
+        level: Log level (logging.INFO, logging.DEBUG, etc.)
+    """
+    # Root logger configuration
     root_logger = logging.getLogger()
-    root_logger.setLevel(logging.DEBUG)
-    root_logger.addHandler(console_handler)
-    root_logger.addHandler(file_handler)
+    root_logger.setLevel(level)  # Root logger accepts this level and above
+    
+    # Remove existing handlers to avoid duplicates
+    root_logger.handlers.clear()
+    
+    # Single console handler
+    handler = logging.StreamHandler(sys.stderr)
+    handler.setLevel(level)
+    formatter = logging.Formatter("%(levelname)s: %(message)s")
+    handler.setFormatter(formatter)
+    
+    root_logger.addHandler(handler)

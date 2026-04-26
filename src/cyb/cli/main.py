@@ -16,19 +16,26 @@ from cyb import __version__
 from cyb.infrastructure import get_logger
 
 
-def setup_cli_logging(verbose: bool) -> None:
-    """Initialize logging for CLI."""
-    level = logging.DEBUG if verbose else logging.INFO
-    logging.basicConfig(level=level)
+def setup_cli_logging(config_path: Optional[str]) -> None:
+    """Initialize logging from config file."""
+    from cyb.infrastructure.logger import setup_logging
+    from cyb.infrastructure import Config
+    
+    # Load config to get log level
+    cfg = Config(config_path=config_path)
+    log_level_str = cfg.get("logging", {}).get("level", "INFO")
+    
+    # Convert string to logging level
+    level = getattr(logging, log_level_str.upper(), logging.INFO)
+    setup_logging(level=level)
 
 
 @click.group(invoke_without_command=True)
 @click.version_option(version=__version__, prog_name="cyb")
-@click.option("-v", "--verbose", is_flag=True, help="Enable verbose logging")
 @click.option("-c", "--config", type=click.Path(exists=True), 
               help="Config file path (default: ~/.cyb/config.yaml)")
 @click.pass_context
-def cli(ctx: click.Context, verbose: bool, config: Optional[str]) -> None:
+def cli(ctx: click.Context, config: Optional[str]) -> None:
     """
     Cyb: Enterprise network observability for your machine.
     
@@ -43,10 +50,9 @@ def cli(ctx: click.Context, verbose: bool, config: Optional[str]) -> None:
     if ctx.obj is None:
         ctx.obj = {}
     
-    ctx.obj["verbose"] = verbose
     ctx.obj["config"] = config
     
-    setup_cli_logging(verbose)
+    setup_cli_logging(config)
     
     # Show help if no subcommand provided
     if ctx.invoked_subcommand is None:
@@ -54,30 +60,38 @@ def cli(ctx: click.Context, verbose: bool, config: Optional[str]) -> None:
 
 
 @cli.command()
-@click.option("-n", "--count", type=int, default=100, 
-              help="Number of recent connections to show")
+@click.option("-n", "--count", type=int, default=None, 
+              help="Number of packets to capture (0=unlimited, default from config)")
 @click.option("--filter", type=str, help="Filter by executable name or IP")
 @click.pass_context
-def monitor(ctx: click.Context, count: int, filter: Optional[str]) -> None:
+def monitor(ctx: click.Context, count: Optional[int], filter: Optional[str]) -> None:
     """
     Start real-time network monitoring.
     
     Displays live connections with process information, destination IPs,
     and ports. Requires elevated privileges (sudo).
     """
-    from cyb.backend import Monitor
+    from cyb.service import NetworkMonitorService as Monitor
+    from cyb.infrastructure import Config
     
     try:
-        mon = Monitor(config_path=ctx.obj.get("config"))
+        # Load config once to get packet_count default
+        config_path = ctx.obj.get("config")
+        cfg = Config(config_path=config_path)
+        
+        # Use CLI count if provided, otherwise get from config
+        if count is None:
+            count = cfg.get("capture", {}).get("packet_count", 0)
+        
+        # Pass Config object instead of path to avoid re-loading
+        mon = Monitor(config=cfg)
         mon.run(limit=count, filter_expr=filter)
     except PermissionError:
         click.secho("✗ Requires root/sudo access", fg="red", err=True)
         sys.exit(1)
     except Exception as e:
         click.secho(f"✗ Error: {e}", fg="red", err=True)
-        if ctx.obj.get("verbose"):
-            import traceback
-            traceback.print_exc()
+        traceback.print_exc()
         sys.exit(1)
 
 
