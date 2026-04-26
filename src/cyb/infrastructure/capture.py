@@ -34,11 +34,9 @@ class PacketCapture:
         logger.info(f"Starting tcpdump: {cmd}")
 
         try:
-            # Run with sudo if needed
-            full_cmd = f"sudo {cmd}"
-
+            # Don't add sudo - caller should run with sudo already
             proc = subprocess.Popen(
-                shlex.split(full_cmd),
+                shlex.split(cmd),
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 text=True,
