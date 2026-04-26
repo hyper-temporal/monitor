@@ -6,7 +6,6 @@ Single Responsibility: Only enriches process metadata.
 """
 
 import subprocess
-from typing import Optional
 import logging
 
 from cyb.domain import ProcessInfo

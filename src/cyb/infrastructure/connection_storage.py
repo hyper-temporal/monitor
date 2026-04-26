@@ -6,7 +6,6 @@ Single Responsibility: Only CRUD operations via repository layer.
 """
 
 from typing import List, Optional
-from datetime import datetime
 from pathlib import Path
 import logging
 import sqlite3

@@ -9,7 +9,6 @@ import sqlite3
 from typing import List
 
 from cyb.domain import Connection
-from cyb.repository import ConnectionRepository
 
 
 class SQLiteRepository:

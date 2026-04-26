@@ -7,6 +7,7 @@ modular subcommands following enterprise patterns.
 
 import sys
 import logging
+import traceback
 from pathlib import Path
 from typing import Optional
 
@@ -123,12 +124,16 @@ def config_show(ctx: click.Context) -> None:
 @click.option("--output", type=click.Path(), help="Output file (default: stdout)")
 @click.pass_context
 def export(ctx: click.Context, format: str, output: Optional[str]) -> None:
-    """Export connection history."""
-    from cyb.core.export import Exporter
+    """Export connection history in various formats.
+    
+    Exports all captured connections using dependency-injected Exporter.
+    """
+    from cyb.infrastructure import create_exporter
     
     try:
-        exp = Exporter()
-        data = exp.export(format=format)
+        # Use factory function for dependency injection
+        exporter = create_exporter()
+        data = exporter.export(format=format)
         
         if output:
             Path(output).write_text(data)

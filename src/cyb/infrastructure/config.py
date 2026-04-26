@@ -5,7 +5,6 @@ Responsibility: Load and provide access to config.
 Single Responsibility: Only config loading.
 """
 
-import os
 import yaml
 from pathlib import Path
 from typing import Any, Optional

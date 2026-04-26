@@ -3,7 +3,6 @@ Analytics: Aggregate and analyze network traffic patterns.
 Responsibility: Group connections by IP, identify patterns, detect anomalies.
 """
 
-from datetime import datetime
 from collections import defaultdict
 from typing import List, Dict, Tuple
 

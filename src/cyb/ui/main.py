@@ -28,7 +28,7 @@ except ImportError:
 
 from cyb.backend import BackendAPI
 from cyb.domain import Connection
-from cyb.core.ip_intel import identify_ip, identify_port, is_common_traffic
+from cyb.domain import identify_ip, identify_port, is_common_traffic
 from cyb.core.analytics import ConnectionAnalytics
 
 
