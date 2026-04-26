@@ -98,33 +98,6 @@ class TestSQLiteRepository(unittest.TestCase):
         self.assertEqual(len(by_exe), 2)
         self.assertTrue(all(c.exe == TEST_EXES["chrome"] for c in by_exe))
 
-    def test_insert_and_retrieve_rule(self):
-        """Insert and retrieve a rule."""
-        rule_id = self.storage.insert_rule(
-            action="block",
-            dst_ip=TEST_IPS["google_dns"],
-            dst_port=None,
-            exe=None,
-            created="2026-04-25T12:00:00",
-        )
-        self.assertGreater(rule_id, 0)
-
-        rules = self.storage.get_rules()
-        self.assertEqual(len(rules), 1)
-        self.assertEqual(rules[0]["action"], "block")
-        self.assertEqual(rules[0]["dst_ip"], TEST_IPS["google_dns"])
-
-    def test_delete_rule(self):
-        """Delete a rule."""
-        rule_id = self.storage.insert_rule(
-            action="block",
-            dst_ip=TEST_IPS["google_dns"],
-            dst_port=None,
-            exe=None,
-            created="2026-04-25T12:00:00",
-        )
-        self.assertTrue(self.storage.delete_rule(rule_id))
-        self.assertEqual(len(self.storage.get_rules()), 0)
 
     def test_update_connection_status(self):
         """Update connection status."""

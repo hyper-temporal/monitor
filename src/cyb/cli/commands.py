@@ -9,4 +9,4 @@ Each command follows Single Responsibility Principle.
 # Commands are implemented inline in main.py for this initial version
 # In a larger app, each command would be a separate module
 
-__all__ = ["monitor", "rules", "export", "config"]
+__all__ = ["monitor", "export", "config"]

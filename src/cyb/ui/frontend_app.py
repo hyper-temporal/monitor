@@ -1,6 +1,6 @@
 """
 Frontend application: Runs as normal user (no privileges required).
-Responsibility: Display real-time connections from database, create rules, search/filter.
+Responsibility: Display real-time connections from database, search/filter.
 Reads from shared SQLite database populated by the backend daemon.
 """
 

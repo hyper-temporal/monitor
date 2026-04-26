@@ -45,18 +45,3 @@ SAMPLE_PACKETS = {
     },
 }
 
-# Rules for testing
-TEST_RULES = [
-    {
-        "action": "block",
-        "dst_ip": TEST_IPS["google_dns"],
-        "dst_port": None,
-        "exe": None,
-    },
-    {
-        "action": "allow",
-        "dst_ip": None,
-        "dst_port": TEST_PORTS["https"],
-        "exe": TEST_EXES["chrome"],
-    },
-]

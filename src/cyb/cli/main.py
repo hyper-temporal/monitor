@@ -40,7 +40,7 @@ def cli(ctx: click.Context, config: Optional[str]) -> None:
     """
     Cyb: Enterprise network observability for your machine.
     
-    Monitor outbound traffic, create rules, and control network access
+    Monitor outbound traffic,  and control network access
     with fine-grained visibility into process-level connections.
     
     Examples:
