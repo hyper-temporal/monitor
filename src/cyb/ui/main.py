@@ -82,15 +82,15 @@ class ConnectionTable(QTableWidget):
     def _get_sort_key(self, conn: dict, col: int):
         """Extract sort key from connection based on column."""
         col_map = {
-            0: lambda c: c["timestamp"],          # Time
-            1: lambda c: c["src_ip"],             # Src IP
-            2: lambda c: c["dst_ip"],             # Dst IP
-            3: lambda c: identify_ip(c["dst_ip"]), # Service
-            4: lambda c: c["dst_port"],           # Port (numeric)
-            5: lambda c: c["protocol"],           # Protocol
-            6: lambda c: c["exe"] or "",          # Process
-            7: lambda c: c["user"] or "",         # User
-            8: lambda c: c["status"],             # Status
+            0: lambda c: c.timestamp,          # Time
+            1: lambda c: c.src_ip,             # Src IP
+            2: lambda c: c.dst_ip,             # Dst IP
+            3: lambda c: identify_ip(c.dst_ip), # Service
+            4: lambda c: c.dst_port,           # Port (numeric)
+            5: lambda c: c.protocol,           # Protocol
+            6: lambda c: c.exe or "",          # Process
+            7: lambda c: c.user or "",         # User
+            8: lambda c: c.status,             # Status
         }
         return col_map.get(col, lambda c: c["timestamp"])(conn)
 
@@ -99,22 +99,22 @@ class ConnectionTable(QTableWidget):
         Detect suspicious activity.
         Returns: (is_suspicious, reason_short, service_name)
         """
-        service = identify_ip(conn["dst_ip"])
-        port_info = identify_port(conn["dst_port"])
+        service = identify_ip(conn.dst_ip)
+        port_info = identify_port(conn.dst_port)
 
         # Check if this is normal traffic
-        if is_common_traffic(conn["dst_ip"], conn["dst_port"]):
+        if is_common_traffic(conn.dst_ip, conn.dst_port):
             # Known service on known port = normal
             return (False, "", service)
 
         # High/unusual ports (not common services)
         common_ports = {80, 443, 53, 22, 25, 465, 587, 993, 143, 123, 53, 5353}
-        if conn["dst_port"] not in common_ports and conn["dst_port"] > 1024:
+        if conn.dst_port not in common_ports and conn.dst_port > 1024:
             # High port not in common list
             return (True, "high-port", service)
 
         # Count how many times we've seen this destination
-        dest_count = sum(1 for c in self.connections if c["dst_ip"] == conn["dst_ip"])
+        dest_count = sum(1 for c in self.connections if c["dst_ip"] == conn.dst_ip)
         if dest_count == 1 and service == "Unknown":
             # New, never-seen-before destination AND unknown service
             return (True, "new-dest", service)
@@ -138,18 +138,18 @@ class ConnectionTable(QTableWidget):
 
             # Get service identification and suspicious status
             is_sus, sus_reason, service = self.is_suspicious(conn)
-            port_info = identify_port(conn["dst_port"])
+            port_info = identify_port(conn.dst_port)
 
             items = [
-                conn["timestamp"].split("T")[1][:8],  # HH:MM:SS
-                conn["src_ip"],
-                conn["dst_ip"],
+                conn.timestamp.split("T")[1][:8],  # HH:MM:SS
+                conn.src_ip,
+                conn.dst_ip,
                 service,  # Service name (Google, Anthropic, Unknown, etc.)
-                str(conn["dst_port"]),
-                conn["protocol"],
-                conn["exe"] or "—",
-                conn["user"] or "—",
-                conn["status"],
+                str(conn.dst_port),
+                conn.protocol,
+                conn.exe or "—",
+                conn.user or "—",
+                conn.status,
             ]
 
             for col, text in enumerate(items):
@@ -175,9 +175,9 @@ class ConnectionTable(QTableWidget):
                     item.setBackground(QColor(255, 165, 0))
 
                 # Status color takes precedence
-                if conn["status"] == "blocked":
+                if conn.status == "blocked":
                     item.setBackground(QColor(255, 100, 100))  # Dark red
-                elif conn["status"] == "allowed":
+                elif conn.status == "allowed":
                     item.setBackground(QColor(100, 255, 100))  # Dark green
 
                 self.setItem(row, col, item)
@@ -191,11 +191,11 @@ class ConnectionTable(QTableWidget):
         search_lower = search_text.lower()
         filtered = [
             conn for conn in self.connections
-            if search_lower in conn["src_ip"].lower()
-            or search_lower in conn["dst_ip"].lower()
-            or search_lower in str(conn["dst_port"])
-            or search_lower in conn["protocol"].lower()
-            or (conn["exe"] and search_lower in conn["exe"].lower())
+            if search_lower in conn.src_ip.lower()
+            or search_lower in conn.dst_ip.lower()
+            or search_lower in str(conn.dst_port)
+            or search_lower in conn.protocol.lower()
+            or (conn.exe and search_lower in conn.exe.lower())
         ]
 
         self.setRowCount(0)
@@ -205,18 +205,18 @@ class ConnectionTable(QTableWidget):
 
             # Get IP intelligence
             is_sus, sus_reason, service = self.is_suspicious(conn)
-            port_info = identify_port(conn["dst_port"])
+            port_info = identify_port(conn.dst_port)
 
             items = [
-                conn["timestamp"].split("T")[1][:8],
-                conn["src_ip"],
-                conn["dst_ip"],
+                conn.timestamp.split("T")[1][:8],
+                conn.src_ip,
+                conn.dst_ip,
                 service,  # Service name
-                str(conn["dst_port"]),
-                conn["protocol"],
-                conn["exe"] or "—",
-                conn["user"] or "—",
-                conn["status"],
+                str(conn.dst_port),
+                conn.protocol,
+                conn.exe or "—",
+                conn.user or "—",
+                conn.status,
             ]
 
             for col, text in enumerate(items):
@@ -237,9 +237,9 @@ class ConnectionTable(QTableWidget):
                         tooltip_parts.append(f"⚠️ Suspicious: {reasons.get(sus_reason, sus_reason)}")
                     item.setToolTip(" | ".join(tooltip_parts))
 
-                if conn["status"] == "blocked":
+                if conn.status == "blocked":
                     item.setBackground(QColor(255, 200, 200))
-                elif conn["status"] == "allowed":
+                elif conn.status == "allowed":
                     item.setBackground(QColor(200, 255, 200))
 
                 self.setItem(row, col, item)
@@ -258,9 +258,9 @@ class AnalyticsTable(QTableWidget):
 
     def setup_table(self):
         """Initialize table structure."""
-        self.setColumnCount(6)
+        self.setColumnCount(7)
         self.setHorizontalHeaderLabels([
-            "Destination IP", "Source IPs", "Processes", "Ports", "Activity", "Last Seen"
+            "Destination IP", "Source IPs", "Processes", "Ports", "Bytes", "Activity", "Last Seen"
         ])
         self.setRowCount(0)
 
@@ -332,8 +332,9 @@ class AnalyticsTable(QTableWidget):
             1: lambda: len(data.get("src_ips", [])),# Source IPs count
             2: lambda: len(data["processes"]),      # Processes count
             3: lambda: len(data["ports"]),          # Ports count
-            4: lambda: data["count"],               # Activity (by count)
-            5: lambda: data["last_seen"],           # Last Seen (timestamp)
+            4: lambda: data["total_bytes"],         # Total Bytes
+            5: lambda: data["count"],               # Activity (by count)
+            6: lambda: data["last_seen"],           # Last Seen (timestamp)
         }
         return col_map.get(col, lambda: ip)()
 
@@ -371,7 +372,7 @@ class AnalyticsTable(QTableWidget):
         # Convert dicts to Connection objects before calling domain service
         # This happens only when the data set actually changes
         try:
-            connection_objects = [Connection(**conn) for conn in connections]
+            connection_objects = connections  # Already Connection objects from backend
         except Exception as e:
             logger.error(f"Failed to convert connections: {e}")
             return
@@ -425,6 +426,7 @@ class AnalyticsTable(QTableWidget):
             src_ips,
             processes,
             ports,
+            f"{data['total_bytes']:,} B",
             activity,
             last_seen_time,
         ]
@@ -579,14 +581,14 @@ class CyberObservabilityApp(QMainWindow):
         # Update live status (most recent packet)
         if raw_conns:
             latest = raw_conns[0]  # Most recent connection
-            service = identify_ip(latest["dst_ip"])
-            time = latest["timestamp"].split("T")[1][:8]  # HH:MM:SS
-            process = latest["exe"] or "System"
-            status_color = "🟩" if latest["status"] == "allowed" else ("🔴" if latest["status"] == "blocked" else "⚫")
+            service = identify_ip(latest.dst_ip)
+            time = latest.timestamp.split("T")[1][:8]  # HH:MM:SS
+            process = latest.exe or "System"
+            status_color = "🟩" if latest.status == "allowed" else ("🔴" if latest.status == "blocked" else "⚫")
 
             self.live_status.setText(
-                f"{status_color} [{time}] {process} → {latest['dst_ip']} ({service}):{latest['dst_port']} "
-                f"({latest['protocol']})"
+                f"{status_color} [{time}] {process} → {latest.dst_ip} ({service}):{latest.dst_port} "
+                f"({latest.protocol})"
             )
         else:
             self.live_status.setText("⏳ Waiting for connections...")

@@ -22,6 +22,7 @@ class Packet(NamedTuple):
     dst_port: int
     protocol: str
     pid: Optional[int] = None
+    size: int = 0
 
     def is_valid(self) -> bool:
         """Check required fields are present."""

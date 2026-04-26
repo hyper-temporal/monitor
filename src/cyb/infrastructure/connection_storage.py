@@ -50,7 +50,8 @@ class ConnectionStorage:
                     pid INTEGER,
                     exe TEXT,
                     user TEXT,
-                    action TEXT
+                    action TEXT,
+                    size INTEGER DEFAULT 0
                 )
             """)
             conn.execute("CREATE INDEX IF NOT EXISTS idx_timestamp ON connections(timestamp)")
@@ -80,8 +81,8 @@ class ConnectionStorage:
             conn.execute("""
                 INSERT INTO connections (
                     id, timestamp, src_ip, src_port, dst_ip, dst_port,
-                    protocol, pid, exe, user, action
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    protocol, pid, exe, user, action, size
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (
                 str(uuid4()),
                 connection.timestamp,
@@ -94,6 +95,7 @@ class ConnectionStorage:
                 connection.exe,
                 connection.user,
                 connection.status,  # Maps Connection.status → action column
+                connection.size,
             ))
             conn.commit()
         finally:

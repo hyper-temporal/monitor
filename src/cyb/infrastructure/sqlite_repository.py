@@ -135,7 +135,7 @@ class SQLiteRepository:
     @staticmethod
     def _row_to_connection(row):
         """Convert database row to Connection object.
-        Schema: id, timestamp, src_ip, src_port, dst_ip, dst_port, protocol, pid, exe, user, action
+        Schema: id, timestamp, src_ip, src_port, dst_ip, dst_port, protocol, pid, exe, user, action, size
         """
         return Connection(
             timestamp=row[1],
@@ -146,7 +146,8 @@ class SQLiteRepository:
             pid=row[7],
             exe=row[8],
             user=row[9],
-            status=SQLiteRepository._map_action_to_status(row[10])  # action → status
+            status=SQLiteRepository._map_action_to_status(row[10]),  # action → status
+            size=row[11] if len(row) > 11 else 0,  # size (default 0 for backward compat)
         )
 
 

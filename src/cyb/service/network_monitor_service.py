@@ -137,7 +137,8 @@ class NetworkMonitorService:
                 pid=packet.pid,
                 exe=proc_info.exe if proc_info else "unknown",
                 user=proc_info.user if proc_info else "unknown",
-                status="pending"
+                status="pending",
+                size=packet.size
             )
         except Exception as e:
             logger.warning(f"Failed to enrich packet {packet}: {e}")

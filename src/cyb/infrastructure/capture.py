@@ -77,7 +77,7 @@ class PacketCapture:
 
         Example tcpdump output:
         13:45:22.123456 IP 192.168.1.100.54321 > 8.8.8.8.53: UDP, length 53
-        13:45:22.234567 IP 192.168.1.100.54322 > 1.1.1.1.443: TCP Flags [S]
+        13:45:22.234567 IP 192.168.1.100.54322 > 1.1.1.1.443: TCP Flags [S], length 52
         """
         try:
             if not line.strip() or line.startswith("tcpdump"):
@@ -94,6 +94,12 @@ class PacketCapture:
 
             src_ip, src_port, dst_ip, dst_port = match.groups()
 
+            # Extract packet size (length field)
+            size = 0
+            size_match = re.search(r'length (\d+)', line)
+            if size_match:
+                size = int(size_match.group(1))
+
             # Determine protocol
             protocol = "UDP" if "UDP" in line else "TCP"
 
@@ -106,6 +112,7 @@ class PacketCapture:
                 dst_port=int(dst_port),
                 protocol=protocol,
                 pid=None,  # Will be enriched later
+                size=size,
             )
         except (ValueError, AttributeError) as e:
             logger.debug(f"Parse error on line '{line}': {e}")

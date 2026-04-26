@@ -26,7 +26,7 @@ class ConnectionAnalytics:
         """
         Group connections by destination IP.
         
-        Returns dict of IP → aggregated stats (count, processes, ports, etc).
+        Returns dict of IP → aggregated stats (count, processes, ports, bytes, etc).
         
         Args:
             connections: List of Connection objects (must be typed)
@@ -40,6 +40,7 @@ class ConnectionAnalytics:
                 grouped[ip] = {
                     "ip": ip,
                     "count": 0,
+                    "total_bytes": 0,
                     "src_ips": set(),
                     "processes": set(),
                     "ports": set(),
@@ -51,6 +52,7 @@ class ConnectionAnalytics:
             
             g = grouped[ip]
             g["count"] += 1
+            g["total_bytes"] += conn.size
             if conn.src_ip:
                 g["src_ips"].add(conn.src_ip)
             if conn.exe:
@@ -92,6 +94,7 @@ class ConnectionAnalytics:
                 grouped[process] = {
                     "process": process,
                     "count": 0,
+                    "total_bytes": 0,
                     "destinations": set(),
                     "ports": set(),
                     "protocols": set(),
@@ -102,6 +105,7 @@ class ConnectionAnalytics:
             
             g = grouped[process]
             g["count"] += 1
+            g["total_bytes"] += conn.size
             g["destinations"].add(conn.dst_ip)
             g["ports"].add(conn.dst_port)
             g["protocols"].add(conn.protocol)
@@ -148,6 +152,7 @@ class ConnectionAnalytics:
         if not connections:
             return {
                 "total_connections": 0,
+                "total_bytes": 0,
                 "unique_ips": 0,
                 "unique_processes": 0,
                 "unique_ports": 0,
@@ -160,6 +165,7 @@ class ConnectionAnalytics:
         ports = set()
         protocols = set()
         status_counts = {"blocked": 0, "allowed": 0, "pending": 0}
+        total_bytes = 0
 
         for conn in connections:
             ips.add(conn.dst_ip)
@@ -168,9 +174,11 @@ class ConnectionAnalytics:
             ports.add(conn.dst_port)
             protocols.add(conn.protocol)
             status_counts[conn.status] += 1
+            total_bytes += conn.size
 
         return {
             "total_connections": len(connections),
+            "total_bytes": total_bytes,
             "unique_ips": len(ips),
             "unique_processes": len(processes),
             "unique_ports": len(ports),

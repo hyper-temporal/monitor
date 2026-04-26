@@ -1,11 +1,13 @@
 """
 Domain model: Network connection.
 
-Represents a network connection event with full enrichment.
+Represents an enriched network connection with process information.
 Core domain entity - no infrastructure dependencies.
+
+Status lifecycle: pending → allowed | blocked
 """
 
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass
 from typing import Optional
 
 
@@ -28,19 +30,28 @@ class Connection:
     exe: Optional[str] = None
     user: Optional[str] = None
     status: str = "pending"  # pending, allowed, blocked
+    size: int = 0
 
     def to_dict(self, include_none: bool = False) -> dict:
         """
         Convert to dictionary for serialization.
 
         Args:
-            include_none: If False (default), exclude None values to reduce payload
-
-        Uses dataclasses.asdict() for efficient conversion.
+            include_none: Include None values in output
         """
-        data = asdict(self)
+        data = {
+            "timestamp": self.timestamp,
+            "src_ip": self.src_ip,
+            "dst_ip": self.dst_ip,
+            "dst_port": self.dst_port,
+            "protocol": self.protocol,
+            "pid": self.pid,
+            "exe": self.exe,
+            "user": self.user,
+            "status": self.status,
+            "size": self.size,
+        }
 
-        # Remove None values to reduce JSON payload size
         if not include_none:
             data = {k: v for k, v in data.items() if v is not None}
 
