@@ -97,3 +97,10 @@ LOG_LEVEL=INFO                     # Logging verbosity
 ## License
 
 Personal use.
+
+
+
+uv run python -m cyb.ui.main -d ./cyb.db
+
+
+sudo uv run cyb -c cyb_local.yaml monitor
