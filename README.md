@@ -1,6 +1,6 @@
 # Cyber Observability Tool
 
-Real-time network monitoring for macOS. Capture packets, identify processes.
+Real-time network monitoring for Unix architecture machine (depends on TCPdump). Capture packets, identify processes.
 
 ## Quick Start
 
@@ -96,9 +96,7 @@ LOG_LEVEL=INFO                     # Logging verbosity
 
 ## License
 
-Personal use.
-
-
+MIT
 
 uv run python -m cyb.ui.main -d ./cyb.db
 
