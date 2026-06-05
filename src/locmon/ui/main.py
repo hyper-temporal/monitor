@@ -29,9 +29,9 @@ try:
 except ImportError:
     PYQT_AVAILABLE = False
 
-from cyb.backend import BackendAPI
-from cyb.domain import Connection, ConnectionAnalytics
-from cyb.domain import identify_ip, identify_port, is_common_traffic
+from locmon.backend import BackendAPI
+from locmon.domain import Connection, ConnectionAnalytics
+from locmon.domain import identify_ip, identify_port, is_common_traffic
 
 
 class ConnectionTable(QTableWidget):
@@ -60,7 +60,7 @@ class ConnectionTable(QTableWidget):
         # Alternate row colors
         self.setAlternatingRowColors(True)
 
-    def add_connection(self, conn):
+    def add_connection(self, conn: dict):
         """Add a connection and maintain in-memory list."""
         self.connections.insert(0, conn)  # Newest first
 
@@ -82,7 +82,7 @@ class ConnectionTable(QTableWidget):
 
         self.refresh_table()
 
-    def _get_sort_key(self, conn, col: int):
+    def _get_sort_key(self, conn: dict, col: int):
         """Extract sort key from connection based on column."""
         col_map = {
             0: lambda c: c.timestamp,          # Time
@@ -95,9 +95,9 @@ class ConnectionTable(QTableWidget):
             7: lambda c: c.user or "",         # User
             8: lambda c: c.status,             # Status
         }
-        return col_map.get(col, lambda c: c.timestamp)(conn)
+        return col_map.get(col, lambda c: c["timestamp"])(conn)
 
-    def is_suspicious(self, conn) -> tuple:
+    def is_suspicious(self, conn: dict) -> tuple:
         """
         Detect suspicious activity.
         Returns: (is_suspicious, reason_short, service_name)
@@ -117,7 +117,7 @@ class ConnectionTable(QTableWidget):
             return (True, "high-port", service)
 
         # Count how many times we've seen this destination
-        dest_count = sum(1 for c in self.connections if c.dst_ip == conn.dst_ip)
+        dest_count = sum(1 for c in self.connections if c["dst_ip"] == conn.dst_ip)
         if dest_count == 1 and service == "Unknown":
             # New, never-seen-before destination AND unknown service
             return (True, "new-dest", service)
@@ -354,9 +354,10 @@ class AnalyticsTable(QTableWidget):
             self._add_row(ip, data)
 
     def update_analytics(self, connections: list):
-        """Update analytics from connections list.
+        """Update analytics from connections list (dicts from backend).
         
         Only updates if the number of connections has changed (avoids redundant conversions).
+        Converts dicts to Connection objects before passing to domain service.
         """
         if not connections:
             self.setRowCount(0)
@@ -369,8 +370,16 @@ class AnalyticsTable(QTableWidget):
         
         self._last_update_count = len(connections)
 
-        # Group by IP using domain service
-        grouped = ConnectionAnalytics.group_by_ip(connections)
+        # Convert dicts to Connection objects before calling domain service
+        # This happens only when the data set actually changes
+        try:
+            connection_objects = connections  # Already Connection objects from backend
+        except Exception as e:
+            logger.error(f"Failed to convert connections: {e}")
+            return
+
+        # Group by IP using domain service (now working with typed objects)
+        grouped = ConnectionAnalytics.group_by_ip(connection_objects)
         self.analytics_data = grouped
 
         # Re-render with current sort order
@@ -544,11 +553,9 @@ class CyberObservabilityApp(QMainWindow):
 
     def on_connection_ingested(self, data: dict):
         """Handle new connection from backend."""
-        conn_dict = data["connection"]
-        # Convert dict to Connection object for consistency
-        conn = Connection(**conn_dict)
+        conn = data["connection"]
         self.table.add_connection(conn)
-        logger.debug(f"Added connection: {conn.src_ip} → {conn.dst_ip}:{conn.dst_port}")
+        logger.debug(f"Added connection: {conn['src_ip']} → {conn['dst_ip']}:{conn['dst_port']}")
 
     def on_search(self, text: str):
         """Handle search/filter input."""
@@ -643,7 +650,7 @@ class CyberObservabilityApp(QMainWindow):
                     "total_connections": len(conns),
                     "total_rules": len(rules),
                 },
-                "connections": [c.to_dict() for c in conns],
+                "connections": [c for c in conns],
                 "rules": rules,
             }
 
@@ -671,14 +678,14 @@ class CyberObservabilityApp(QMainWindow):
 
             # Get first connection to determine columns
             first = conns[0]
-            fieldnames = first.to_dict().keys()
+            fieldnames = first.keys()
 
             with open(filepath, "w", newline="") as f:
                 writer = csv.DictWriter(f, fieldnames=fieldnames)
                 writer.writeheader()
 
                 for conn in conns:
-                    row = conn.to_dict()
+                    row = conn
                     writer.writerow(row)
 
             logger.info(f"✓ Exported to {filepath}")

@@ -1,0 +1,167 @@
+"""
+SQLite implementation of ConnectionRepository.
+
+Infrastructure-specific adapter: handles SQLite details.
+Implements the generic ConnectionRepository interface defined in domain/repository.
+"""
+
+import sqlite3
+from typing import List
+
+from locmon.domain import Connection
+
+
+class SQLiteRepository:
+    """SQLite adapter for connections (read-only frontend access)."""
+
+    def __init__(self, db_path: str = ":memory:", read_only: bool = False):
+        """Initialize repository with SQLite database.
+
+        Args:
+            db_path: Path to SQLite database
+            read_only: If True, open in read-only mode (for frontend use)
+        """
+        self.db_path = db_path
+        self.read_only = read_only
+
+    def _get_connection(self):
+        """Get a database connection."""
+        if self.read_only:
+            # Read-only mode: use URI with immutable flag
+            uri = f"file:{self.db_path}?mode=ro"
+            return sqlite3.connect(uri, uri=True, timeout=5.0)
+        else:
+            return sqlite3.connect(self.db_path, timeout=5.0)
+
+    # --- Connections ---
+
+    def insert_connection(self, conn: Connection) -> int:
+        """Insert a connection record."""
+        if self.read_only:
+            raise RuntimeError("Cannot write to read-only database")
+        raise NotImplementedError("Use backend daemon for writes")
+
+    def get_connections(self, limit: int = 100) -> List[Connection]:
+        """Get recent connections (limited)."""
+        db_conn = self._get_connection()
+        try:
+            cursor = db_conn.cursor()
+            cursor.execute("""
+                SELECT * FROM connections
+                ORDER BY timestamp DESC
+                LIMIT ?
+            """, (limit,))
+
+            rows = cursor.fetchall()
+            return [self._row_to_connection(row) for row in rows]
+        except sqlite3.OperationalError as e:
+            if "no such table" in str(e):
+                return []
+            raise
+        finally:
+            db_conn.close()
+
+    def get_all_connections(self) -> List[Connection]:
+        """Get all connections from database (no limit)."""
+        db_conn = self._get_connection()
+        try:
+            cursor = db_conn.cursor()
+            cursor.execute("""
+                SELECT * FROM connections
+                ORDER BY timestamp DESC
+            """)
+
+            rows = cursor.fetchall()
+            return [self._row_to_connection(row) for row in rows]
+        except sqlite3.OperationalError as e:
+            if "no such table" in str(e):
+                return []
+            raise
+        finally:
+            db_conn.close()
+
+    def get_connection_by_ip(self, dst_ip: str, limit: int = 50) -> List[Connection]:
+        """Get connections by destination IP."""
+        db_conn = self._get_connection()
+        try:
+            cursor = db_conn.cursor()
+            cursor.execute("""
+                SELECT * FROM connections
+                WHERE dst_ip = ?
+                ORDER BY timestamp DESC
+                LIMIT ?
+            """, (dst_ip, limit))
+
+            rows = cursor.fetchall()
+            return [self._row_to_connection(row) for row in rows]
+        except sqlite3.OperationalError as e:
+            if "no such table" in str(e):
+                return []
+            raise
+        finally:
+            db_conn.close()
+
+    def get_connection_by_exe(self, exe: str, limit: int = 50) -> List[Connection]:
+        """Get connections by executable."""
+        db_conn = self._get_connection()
+        try:
+            cursor = db_conn.cursor()
+            cursor.execute("""
+                SELECT * FROM connections
+                WHERE exe = ?
+                ORDER BY timestamp DESC
+                LIMIT ?
+            """, (exe, limit))
+
+            rows = cursor.fetchall()
+            return [self._row_to_connection(row) for row in rows]
+        except sqlite3.OperationalError as e:
+            if "no such table" in str(e):
+                return []
+            raise
+        finally:
+            db_conn.close()
+
+    @staticmethod
+    def _map_action_to_status(action):
+        """Map backend 'action' field to UI 'status' field."""
+        if action == "allow":
+            return "allowed"
+        elif action == "block":
+            return "blocked"
+        else:
+            return "pending"
+
+    @staticmethod
+    def _row_to_connection(row):
+        """Convert database row to Connection object.
+        Schema: id, timestamp, src_ip, src_port, dst_ip, dst_port, protocol, pid, exe, user, action, size
+        """
+        return Connection(
+            timestamp=row[1],
+            src_ip=row[2],
+            dst_ip=row[4],
+            dst_port=row[5],
+            protocol=row[6],
+            pid=row[7],
+            exe=row[8],
+            user=row[9],
+            status=SQLiteRepository._map_action_to_status(row[10]),  # action → status
+            size=row[11] if len(row) > 11 else 0,  # size (default 0 for backward compat)
+        )
+
+
+    def clear_and_vacuum(self) -> None:
+        """Delete all connections and reclaim space."""
+        import sqlite3
+
+        # Always use direct connection, ignore read_only
+        conn = sqlite3.connect(str(self.db_path), timeout=5.0)
+        try:
+            cursor = conn.cursor()
+            cursor.execute("DELETE FROM connections")
+            conn.commit()  # Commit before VACUUM
+            cursor.execute("VACUUM")
+            conn.commit()
+        finally:
+            conn.close()
