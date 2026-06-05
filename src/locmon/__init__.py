@@ -1,4 +1,4 @@
-"""Cyb: Enterprise-grade network observability tool."""
+"""Locmon: Enterprise-grade network observability tool."""
 
 __version__ = "0.1.0"
 

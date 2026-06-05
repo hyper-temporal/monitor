@@ -22,7 +22,7 @@ class Config:
             "packet_count": 0,  # 0 = unlimited
         },
         "storage": {
-            "db_path": "~/.cyb/cyb.db",
+            "db_path": "~/.locmon/locmon.db",
         },
         "logging": {
             "level": "INFO",
@@ -41,9 +41,9 @@ class Config:
     def _load_default(self) -> None:
         """Load from default locations."""
         default_paths = [
-            Path.home() / ".cyb" / "config.yaml",
-            Path.home() / ".config" / "cyb" / "config.yaml",
-            Path("/etc/cyb/config.yaml"),
+            Path.home() / ".locmon" / "config.yaml",
+            Path.home() / ".config" / "locmon" / "config.yaml",
+            Path("/etc/locmon/config.yaml"),
         ]
 
         for path in default_paths:

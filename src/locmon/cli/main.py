@@ -32,20 +32,20 @@ def setup_cli_logging(config_path: Optional[str]) -> None:
 
 
 @click.group(invoke_without_command=True)
-@click.version_option(version=__version__, prog_name="cyb")
+@click.version_option(version=__version__, prog_name="locmon")
 @click.option("-c", "--config", type=click.Path(exists=True), 
-              help="Config file path (default: ~/.cyb/config.yaml)")
+              help="Config file path (default: ~/.locmon/config.yaml)")
 @click.pass_context
 def cli(ctx: click.Context, config: Optional[str]) -> None:
     """
-    Cyb: Enterprise network observability for your machine.
+    Locmon: Enterprise network observability for your machine.
     
     Monitor outbound traffic,  and control network access
     with fine-grained visibility into process-level connections.
     
     Examples:
-        cyb monitor              # Start real-time monitoring
-        cyb export --format json # Export connection history
+        locmon monitor              # Start real-time monitoring
+        locmon export --format json # Export connection history
     """
     # Ensure context object exists
     if ctx.obj is None:
@@ -159,4 +159,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-  main()
